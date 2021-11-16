@@ -2,8 +2,6 @@ import glob
 import os
 import re
 
-from typing import List
-
 STEP_KEYWORDS = ['given', 'when', 'then', 'and', 'but']
 
 
@@ -29,13 +27,12 @@ class Scenario:
         self.line: str = line
         self.name: str = name
         self.outline: bool = outline
-        self.tags: List[str] = tags
+        self.tags: list[str] = tags
         self.body: str = body
 
         self.test_id = None
-        self.test_plans: List[TestPlan] = []
-        self.test_sets: List[TestSet] = []
-        self.platform_names: List[str] = []
+        self.test_plans: list[TestPlan] = []
+        self.test_sets: list[TestSet] = []
         self.effective_tags = tags + feature.tags
 
         self._find_test_id()
@@ -55,31 +52,15 @@ class Scenario:
 
     def _find_test_plans(self):
         if self.cucumber.config['test_repository_type'] == 'xray':
-            test_plans = []
-            for tag in self.effective_tags:
-                match = re.findall(r'^tp:(.+)$', tag)
-                if match:
-                    test_plans.append(match[0])
-
-            repository_test_plans = self.cucumber.config['test_plans']
-            for test_plan in test_plans:
-                for repository_test_plan in repository_test_plans:
-                    if repository_test_plan['tag'] == test_plan:
-                        self.test_plans.append(TestPlan(repository_test_plan['tag'], repository_test_plan['id']))
+            for test_plan in self.cucumber.test_plans:
+                if test_plan.tag in self.effective_tags:
+                    self.test_plans.append(test_plan)
 
     def _find_test_sets(self):
         if self.cucumber.config['test_repository_type'] == 'xray':
-            test_sets = []
-            for tag in self.effective_tags:
-                match = re.findall(r'^ts:(.+)$', tag)
-                if match:
-                    test_sets.append(match[0])
-
-            repository_test_sets = self.cucumber.config['test_sets']
-            for test_set in test_sets:
-                for repository_test_set in repository_test_sets:
-                    if repository_test_set['tag'] == test_set:
-                        self.test_sets.append(TestSet(repository_test_set['tag'], repository_test_set['id']))
+            for test_set in self.cucumber.test_sets:
+                if test_set.tag in self.effective_tags:
+                    self.test_sets.append(test_set)
 
     @property
     def _tags_block(self):
@@ -91,13 +72,13 @@ class Scenario:
                 tags_line1.append('@' + self.test_id)
                 tags.discard(self.test_id)
             for test_plan in self.test_plans:
-                if 'tp:' + test_plan.tag not in self.feature.tags:
-                    tags_line1.append('@tp:' + test_plan.tag)
-                tags.discard('tp:' + test_plan.tag)
+                if test_plan.tag not in self.feature.tags:
+                    tags_line1.append('@' + test_plan.tag)
+                tags.discard(test_plan.tag)
             for test_set in self.test_sets:
-                if 'ts:' + test_set.tag not in self.feature.tags:
-                    tags_line1.append('@ts:' + test_set.tag)
-                tags.discard('ts:' + test_set.tag)
+                if test_set.tag not in self.feature.tags:
+                    tags_line1.append('@' + test_set.tag)
+                tags.discard(test_set.tag)
             tags_line2 = ['@' + tag for tag in sorted(tags)]
             return '  ' + ' '.join(tags_line1) + '\n  ' + ' '.join(tags_line2) + '\n'
 
@@ -113,6 +94,10 @@ class Scenario:
     def text(self):
         return self._tags_block + self._name_block + self._body_block
 
+    @property
+    def test_dir(self):
+        return '/' + self.feature.path.rstrip('.feature').split('/features/')[1]
+
 
 class Feature:
 
@@ -120,12 +105,12 @@ class Feature:
         self.cucumber: CucumberWrapper = cucumber
         self.path: str = path
         self.name: str = name
-        self.tags: List[str] = tags
+        self.tags: list[str] = tags
         self.line: int = line
-        self.body: List[str] = body
+        self.body: list[str] = body
 
-        self.scenarios: List[Scenario] = []
-        self.test_plans: List[TestPlan] = []
+        self.scenarios: list[Scenario] = []
+        self.test_plans: list[TestPlan] = []
 
         self._find_test_plans()
 
@@ -145,17 +130,9 @@ class Feature:
 
     def _find_test_plans(self):
         if self.cucumber.config['test_repository_type'] == 'xray':
-            test_plans = []
-            for tag in self.tags:
-                match = re.findall(r'^tp:(.+)$', tag)
-                if match:
-                    test_plans.append(match[0])
-
-            repository_test_plans = self.cucumber.config['test_plans']
-            for test_plan in test_plans:
-                for repository_test_plan in repository_test_plans:
-                    if repository_test_plan['tag'] == test_plan:
-                        self.test_plans.append(TestPlan(repository_test_plan['tag'], repository_test_plan['id']))
+            for test_plan in self.cucumber.test_plans:
+                if test_plan.tag in self.tags:
+                    self.test_plans.append(test_plan)
 
     @property
     def _tags_block(self):
@@ -163,8 +140,8 @@ class Feature:
             tags = set(self.tags)
             tags_line1 = []
             for test_plan in self.test_plans:
-                tags_line1.append('@tp:' + test_plan.tag)
-                tags.discard('tp:' + test_plan.tag)
+                tags_line1.append('@' + test_plan.tag)
+                tags.discard(test_plan.tag)
             tags_line2 = ['@' + tag for tag in sorted(tags)]
             return ' '.join(tags_line1) + '\n' + ' '.join(tags_line2) + '\n'
 
@@ -188,12 +165,14 @@ class CucumberWrapper:
         self.features_root_path: str = config['features']
         self.result: str = config['result']
         self.features_re_path: str = os.path.join(self.features_root_path, '**/*.feature')
+        self.test_plans = [TestPlan(x['tag'], x['id']) for x in config['test_plans']]
+        self.test_sets = [TestSet(x['tag'], x['id']) for x in config['test_sets']]
 
     @property
-    def features(self) -> List[Feature]:
+    def features(self) -> list[Feature]:
         return self.get_features(self.features_re_path)
 
-    def get_features(self, re_path) -> List[Feature]:
+    def get_features(self, re_path) -> list[Feature]:
         features = []
         feature_paths = [f.replace(os.sep, '/') for f in glob.glob(re_path, recursive=True)]
         for path in feature_paths:
@@ -261,5 +240,3 @@ class CucumberWrapper:
             feature.add_scenario(Scenario(self, feature, index + 1, name, outline, tags, body))
 
         return feature
-
-

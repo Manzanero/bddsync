@@ -42,10 +42,31 @@ def main(arg_vars: list = None):
 
     parser = argparse.ArgumentParser(NAME)
     parser.add_argument('--config', default='bddfile.yml')
+    parser.add_argument('-u', '--test-repository-user')
+    parser.add_argument('-p', '--test-repository-pass')
     parser.add_argument('command', choices=Commands.all())
     args = parser.parse_args(bddsync_args)
+
+    # config
     with open(args.config, 'r', encoding='utf-8') as kwarg_file:
         config = yaml.safe_load(kwarg_file)
+
+    # credentials
+    if args.test_repository_user:
+        test_repository_user = args.user
+    elif 'TEST_REPOSITORY_USER' in dict(os.environ):
+        test_repository_user = os.environ['TEST_REPOSITORY_USER']
+    else:
+        test_repository_user = input('Enter repository user: ')
+    config['test_repository_user'] = test_repository_user
+
+    if args.test_repository_pass:
+        test_repository_pass = args.user
+    elif 'TEST_REPOSITORY_PASS' in dict(os.environ):
+        test_repository_pass = os.environ['TEST_REPOSITORY_PASS']
+    else:
+        test_repository_pass = input('Enter repository pass: ')
+    config['test_repository_pass'] = test_repository_pass
 
     if command == Commands.TEST_REPOSITORY_FOLDERS:
         test_repository_folders_command(command_args, config)
@@ -54,7 +75,7 @@ def main(arg_vars: list = None):
     elif command == Commands.SCENARIOS:
         scenarios_command(command_args, config)
     elif command == Commands.UPLOAD_FEATURES:
-        upload_command(command_args, config)
+        upload_features_command(command_args, config)
     else:
         print(f'Error: command "{command}" not managed yet')
         exit(1)
@@ -90,7 +111,7 @@ def scenarios_command(command_args, config):
             print(scenario.name)
 
 
-def upload_command(command_args, config):
+def upload_features_command(command_args, config):
     parser = argparse.ArgumentParser(f"{NAME} [...] {Commands.UPLOAD_FEATURES}")
     parser.add_argument('feature', nargs='+')
     args = parser.parse_args(command_args)
@@ -112,6 +133,7 @@ def upload_command(command_args, config):
     xray = XrayWrapper(config)
     duplicated_test = []
     for feature in features:
+        print(f'Processing feature: "{feature.name}"')
 
         # check if there are test with the same name
         if issues := xray.get_issues_by_names([x.name for x in feature.scenarios if not x.test_id]):
@@ -129,13 +151,36 @@ def upload_command(command_args, config):
                 print(f'Updated Test: "{scenario.name}" [{scenario.test_id}]')
             else:
                 duplicated_test.append(scenario)
-                print(f'Duplicated Test: "{scenario.name}" [{scenario.test_id}] -> [{new_scenario_id}]')
+                if int(scenario.test_id.split('-')[1]) > int(new_scenario_id.split('-')[1]):
+                    hint = 'check if this key is the correct key'
+                else:
+                    hint = 'check if this key has to be removed'
+                print(f'Duplicated Test: "{scenario.name}" [{scenario.test_id}] -> {hint}: [{new_scenario_id}]')
                 continue
 
-            labels = xray.get_labels(new_scenario_id)
-            labels_to_remove = [label for label in labels if label not in scenario.tags and '.feature' not in label]
+            issues = xray.get_issue(new_scenario_id,
+                                    ['labels', 'status', xray.TEST_REPOSITORY_PATH_FIELD, xray.TEST_PLANS_FIELD])
+
+            # manage labels
+            labels = issues['fields']['labels']
+            labels_to_remove = [label for label in labels if label not in scenario.tags]
             xray.remove_labels(new_scenario_id, labels_to_remove)
 
+            # manage path
+            test_dir = issues['fields'][xray.TEST_REPOSITORY_PATH_FIELD]
+            if scenario.test_dir and scenario.test_dir != test_dir:
+                xray.make_dirs(scenario.test_dir)
+                xray.move_test_dir(new_scenario_id, scenario.test_dir)
+
+            # manage plans
+            xray_test_plans = issues['fields'][xray.TEST_PLANS_FIELD]
+            code_test_plans = [plan.id for plan in scenario.test_plans]
+            code_test_plans_to_add = [plan for plan in code_test_plans if plan not in xray_test_plans]
+            xray_test_plans_to_remove = [plan for plan in xray_test_plans if plan not in code_test_plans]
+            xray.add_tests_to_test_plans([new_scenario_id], code_test_plans_to_add)
+            xray.remove_tests_from_test_plans([new_scenario_id], xray_test_plans_to_remove)
+
+        print(f'Repairing feature tags')
         feature.repair_tags()
         xray.import_feature(feature.path)
 
@@ -153,12 +198,11 @@ if __name__ == '__main__':
     #
     # main([Commands.FEATURES, '-h'])
     # main([Commands.FEATURES])
-    # main([Commands.FEATURES, '--features-re-path', 'features/web/**/*.feature'])
+    # main([Commands.FEATURES, '--features-re-path', 'features/Web/**/*.feature'])
     #
     # main([Commands.SCENARIOS, '-h'])
     # main([Commands.SCENARIOS])
     #
     # main([Commands.UPLOAD, '-h'])
-    # main([Commands.UPLOAD_FEATURES, r'features\owa\android'])
-    # main([Commands.UPLOAD_FEATURES, r'C:\workspaces\bddsync\features\owa\android\camerasWrapperAndroid.feature'])
-    main([Commands.UPLOAD_FEATURES, r'C:\workspaces\verisureowatesting\features\iosWrapper\camerasWrapperIos.feature'])
+    # main([Commands.UPLOAD_FEATURES, r'features\Verisure OWA\Wrapper Android'])
+    main([Commands.UPLOAD_FEATURES, r'C:\workspaces\bddsync\features\Verisure OWA\Wrapper Android\camerasWrapperAndroid.feature'])
