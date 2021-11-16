@@ -46,7 +46,9 @@ class Scenario:
         if self.cucumber.config['test_repository_type'] == 'xray':
             for tag in self.tags:
                 match = re.findall(r'^\w+-\d+$', tag)
-                if match:
+                if match and \
+                        match not in [x.id for x in self.cucumber.test_plans] and \
+                        match not in [x.id for x in self.cucumber.test_sets]:
                     self.test_id = match[0]
                     return
 
@@ -96,7 +98,7 @@ class Scenario:
 
     @property
     def test_dir(self):
-        return '/' + self.feature.path.rstrip('.feature').split('/features/')[1]
+        return '/' + self.feature.path.split('/features/')[1].replace(".feature", "")
 
 
 class Feature:

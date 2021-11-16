@@ -44,17 +44,19 @@ class XrayWrapper:
         add_folders(folders := [], response_dict)
         return folders if path == '/' else [folder for folder in folders if folder.path.startswith(path)]
 
-    def import_feature(self, path):
+    def import_feature(self, feature):
         try:
             response = requests.post(f'{self.base_url}/rest/raven/1.0/import/feature',
                                      params={'projectKey': self.project_key},
-                                     files={'file': open(path, 'r', encoding='utf-8')},
+                                     files={'file': open(feature.path, 'r', encoding='utf-8')},
                                      auth=self.auth)
             imported_scenarios = response.json()
+            if not len(imported_scenarios) == len(feature.scenarios):
+                raise Exception(f'ERROR: Some scenarios wer not imported. Response:\n{response.text}')
             return [x['key'] for x in imported_scenarios]
 
         except Exception as e:
-            raise Exception(f'ERROR: Cannot import "{path}" due to error: {e}')
+            raise Exception(f'ERROR: Cannot import "{feature.path}" due to error: {e}')
 
     def get_issues_by_names(self, names: list) -> list:
         if not names:
@@ -68,7 +70,7 @@ class XrayWrapper:
         summary_conditions = 'or '.join([f"summary ~ '{_replaces(x)}' " for x in names])
         jql = f'project = {self.project_key} and ' + summary_conditions
         response = requests.post(f'{self.base_url}/rest/api/2/search',
-                                 json={"jql": jql, "fields": ['summary']},
+                                 json={"jql": jql, "maxResults": 1000, "fields": ['summary']},
                                  auth=self.auth)
         if response.status_code != 200:
             raise Exception(f'ERROR: Cannot get search due to error: '

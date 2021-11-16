@@ -117,31 +117,35 @@ def upload_features_command(command_args, config):
     args = parser.parse_args(command_args)
     paths = args.feature
 
+    cucumber = CucumberWrapper(config)
+
     feature_paths = []
     for path in paths:
-        if os.path.isfile(path) and path.endswith('.feature'):
-            feature_paths += [path]
-        if os.path.isdir(path):
-            feature_paths += [f for f in glob.glob(os.path.join(path, '**/*.feature'), recursive=True)]
-    feature_paths = [f.replace(os.sep, '/') for f in feature_paths]
+        feature_paths += [f.replace(os.sep, '/') for f in glob.glob(path, recursive=True) if f.endswith('.feature')]
 
-    cucumber = CucumberWrapper(config)
     features = []
     for feature_path in feature_paths:
         features += cucumber.get_features(feature_path)
 
     xray = XrayWrapper(config)
-    duplicated_test = []
     for feature in features:
-        print(f'Processing feature: "{feature.name}"')
+        print(f'Processing feature: "{feature.name} (path={feature.path})"')
 
         # check if there are test with the same name
-        if issues := xray.get_issues_by_names([x.name for x in feature.scenarios if not x.test_id]):
-            print(f"Issues already exists for scenarios in {feature.path}: \n" +
-                  ''.join([f"  - {x['key']}: {x['fields']['summary']}\n" for x in issues]))
-            exit(1)
+        if issues := xray.get_issues_by_names([x.name for x in feature.scenarios]):
+            summaries = [issue['fields']['summary'] for issue in issues]
+            duplicates = []
 
-        new_scenario_ids = xray.import_feature(feature.path)
+            for issue in issues:
+                if summaries.count(issue['fields']['summary']) > 1:
+                    duplicates.append(issue)
+
+            if duplicates:
+                print(f'Some issues are duplicated for scenarios in "{feature.path}": \n' +
+                      ''.join([f"  - {issue['key']}: {issue['fields']['summary']}\n" for issue in duplicates]))
+                exit(1)
+
+        new_scenario_ids = xray.import_feature(feature)
         for i, scenario in enumerate(feature.scenarios):
             new_scenario_id = new_scenario_ids[i]
             if not scenario.test_id:
@@ -150,7 +154,6 @@ def upload_features_command(command_args, config):
             elif scenario.test_id == new_scenario_id:
                 print(f'Updated Test: "{scenario.name}" [{scenario.test_id}]')
             else:
-                duplicated_test.append(scenario)
                 if int(scenario.test_id.split('-')[1]) > int(new_scenario_id.split('-')[1]):
                     hint = 'check if this key is the correct key'
                 else:
@@ -180,9 +183,11 @@ def upload_features_command(command_args, config):
             xray.add_tests_to_test_plans([new_scenario_id], code_test_plans_to_add)
             xray.remove_tests_from_test_plans([new_scenario_id], xray_test_plans_to_remove)
 
-        print(f'Repairing feature tags')
+        print('Repairing feature tags')
         feature.repair_tags()
+        print('Validating result')
         xray.import_feature(feature.path)
+        print(f'Feature updated successfully: "{feature.name}"')
 
 
 if __name__ == '__main__':
@@ -205,4 +210,4 @@ if __name__ == '__main__':
     #
     # main([Commands.UPLOAD, '-h'])
     # main([Commands.UPLOAD_FEATURES, r'features\Verisure OWA\Wrapper Android'])
-    main([Commands.UPLOAD_FEATURES, r'C:\workspaces\bddsync\features\Verisure OWA\Wrapper Android\camerasWrapperAndroid.feature'])
+    main([Commands.UPLOAD_FEATURES, r'C:\workspaces\bddsync\features\Verisure OWA\Web\panelstatus.feature'])
