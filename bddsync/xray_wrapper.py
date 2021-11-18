@@ -50,9 +50,12 @@ class XrayWrapper:
                                      params={'projectKey': self.project_key},
                                      files={'file': open(feature.path, 'r', encoding='utf-8')},
                                      auth=self.auth)
-            imported_scenarios = response.json()
+            try:
+                imported_scenarios = response.json()
+            except json.decoder.JSONDecodeError:
+                raise Exception(f'Not a JSON response. Response:\n{response.text}')
             if not len(imported_scenarios) == len(feature.scenarios):
-                raise Exception(f'ERROR: Some scenarios wer not imported. Response:\n{response.text}')
+                raise Exception(f'Some scenarios were not imported. Response:\n{response.text}')
             return [x['key'] for x in imported_scenarios]
 
         except Exception as e:

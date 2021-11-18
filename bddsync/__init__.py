@@ -127,9 +127,12 @@ def upload_features_command(command_args, config):
     for feature_path in feature_paths:
         features += cucumber.get_features(feature_path)
 
+    if not features:
+        print('No Feature found')
+
     xray = XrayWrapper(config)
     for feature in features:
-        print(f'Processing feature: "{feature.name} (path={feature.path})"')
+        print(f'Processing feature: {feature.name} (path="{feature.path}")')
 
         # check if there are test with the same name
         if issues := xray.get_issues_by_names([x.name for x in feature.scenarios]):
@@ -186,8 +189,8 @@ def upload_features_command(command_args, config):
         print('Repairing feature tags')
         feature.repair_tags()
         print('Validating result')
-        xray.import_feature(feature.path)
-        print(f'Feature updated successfully: "{feature.name}"')
+        xray.import_feature(feature)
+        print(f'Feature updated successfully: {feature.name}')
 
 
 if __name__ == '__main__':
@@ -210,4 +213,4 @@ if __name__ == '__main__':
     #
     # main([Commands.UPLOAD, '-h'])
     # main([Commands.UPLOAD_FEATURES, r'features\Verisure OWA\Wrapper Android'])
-    main([Commands.UPLOAD_FEATURES, r'C:\workspaces\bddsync\features\Verisure OWA\Web\panelstatus.feature'])
+    main([Commands.UPLOAD_FEATURES, r'C:\workspaces\bddsync\features\Verisure OWA\Wrapper IOS\routineWrapperIos.feature'])
