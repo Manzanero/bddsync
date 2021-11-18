@@ -83,7 +83,7 @@ def main(arg_vars: list = None):
 
 def test_repository_folders_command(command_args, config):
     parser = argparse.ArgumentParser(f"{NAME} [...] {Commands.TEST_REPOSITORY_FOLDERS}")
-    parser.add_argument('--folder', help='Choose a folder, else "root"')
+    parser.add_argument('--folder', default='/', help='Choose a folder, else "root"')
     args = parser.parse_args(command_args)
 
     xray = XrayWrapper(config)
@@ -194,6 +194,7 @@ def upload_features_command(command_args, config):
 
 
 if __name__ == '__main__':
+    pass
     # main(['-h'])
     # main(['-h', Commands.TEST_REPOSITORY_FOLDERS])
     # main(['-h', '--config', 'bddfile.yml', Commands.TEST_REPOSITORY_FOLDERS])
@@ -213,4 +214,4 @@ if __name__ == '__main__':
     #
     # main([Commands.UPLOAD, '-h'])
     # main([Commands.UPLOAD_FEATURES, r'features\Verisure OWA\Wrapper Android'])
-    main([Commands.UPLOAD_FEATURES, r'C:\workspaces\bddsync\features\Verisure OWA\Wrapper IOS\routineWrapperIos.feature'])
+    # main([Commands.UPLOAD_FEATURES, r'C:\workspaces\bddsync\features\Verisure OWA\Web\actionplans.feature'])
