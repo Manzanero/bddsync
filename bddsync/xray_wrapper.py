@@ -79,7 +79,10 @@ class XrayWrapper:
             raise Exception(f'ERROR: Cannot get search due to error: '
                             f'(status code: {response.status_code}) {response.text}')
 
-        return response.json()['issues']
+        try:
+            return response.json()['issues']
+        except json.decoder.JSONDecodeError:
+            raise Exception(f'Not a JSON response. Response:\n{response.text}')
 
     def get_issue(self, issue_key: str, fields: list[str]) -> dict:
         response = requests.get(f"{self.base_url}/rest/api/2/issue/{issue_key}?fields={','.join(fields)}",

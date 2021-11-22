@@ -134,18 +134,30 @@ def upload_features_command(command_args, config):
     for feature in features:
         print(f'Processing feature: {feature.name} (path="{feature.path}")')
 
-        # check if there are test with the same name
+        # check if there are test with the same name, or id is invalid
         if issues := xray.get_issues_by_names([x.name for x in feature.scenarios]):
+            xray_keys = [issue['key'] for issue in issues]
+            invalids = []
+            for scenario in feature.scenarios:
+                if scenario.test_id not in xray_keys:
+                    invalids.append(scenario)
+
             summaries = [issue['fields']['summary'] for issue in issues]
             duplicates = []
-
             for issue in issues:
                 if summaries.count(issue['fields']['summary']) > 1:
                     duplicates.append(issue)
 
-            if duplicates:
-                print(f'Some issues are duplicated for scenarios in "{feature.path}": \n' +
-                      ''.join([f"  - {issue['key']}: {issue['fields']['summary']}\n" for issue in duplicates]))
+            if invalids or duplicates:
+                print("Upload stopped due to errors:")
+                if invalids:
+                    print(f'  * Some scenarios from "{feature.path}" have different names in xray:\n' +
+                          ''.join([f"    - {scenario.test_id}: "
+                                   f"{scenario['fields']['summary']}\n" for scenario in invalids]))
+                if duplicates:
+                    print(f'  * Some issues are duplicated for scenarios in "{feature.path}":\n' +
+                          ''.join([f"    - {issue['key']}: "
+                                   f"{issue['fields']['summary']}\n" for issue in duplicates]))
                 exit(1)
 
         new_scenario_ids = xray.import_feature(feature)
@@ -190,7 +202,7 @@ def upload_features_command(command_args, config):
         feature.repair_tags()
         print('Validating result')
         xray.import_feature(feature)
-        print(f'Feature updated successfully: {feature.name}')
+        print(f'Feature updated successfully: {feature.name}\n')
 
 
 if __name__ == '__main__':
