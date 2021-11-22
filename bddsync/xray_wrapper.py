@@ -88,16 +88,31 @@ class XrayWrapper:
         response = requests.get(f"{self.base_url}/rest/api/2/issue/{issue_key}?fields={','.join(fields)}",
                                 auth=self.auth)
         if response.status_code != 200:
-            raise Exception(f'ERROR: Cannot get labels due to error: '
+            raise Exception(f'ERROR: Cannot get labels from [{issue_key}] due to error: '
                             f'(status code: {response.status_code}) {response.text}')
-        return response.json()
+        try:
+            return response.json()
+        except json.decoder.JSONDecodeError:
+            raise Exception(f'Not a JSON response. Response:\n{response.text}')
+
+    def rename_issue(self, issue_key: str, summary: str) -> dict:
+        response = requests.put(f"{self.base_url}/rest/api/2/issue/{issue_key}",
+                                json={"fields": {"summary": summary}},
+                                auth=self.auth)
+        if response.status_code != 200:
+            raise Exception(f'ERROR: Cannot rename [{issue_key}] due to error: '
+                            f'(status code: {response.status_code}) {response.text}')
+        try:
+            return response.json()
+        except json.decoder.JSONDecodeError:
+            raise Exception(f'Not a JSON response. Response:\n{response.text}')
 
     def remove_labels(self, issue_key: str, labels: list):
         response = requests.put(f'{self.base_url}/rest/api/2/issue/{issue_key}',
                                 json={"update": {"labels": [{"remove": label} for label in labels]}},
                                 auth=self.auth)
         if response.status_code != 204:
-            raise Exception(f'ERROR: Cannot remove labels {labels} due to error: '
+            raise Exception(f'ERROR: Cannot remove labels {labels} from [{issue_key}] due to error: '
                             f'(status code: {response.status_code}) {response.text}')
 
     def add_tests_to_test_plans(self, issue_keys: list[str], test_plan_keys: list[str]):
@@ -156,8 +171,8 @@ class XrayWrapper:
 
 
 if __name__ == '__main__':
-    import yaml
-    with open('../bddfile.yml', 'r', encoding='utf-8') as kwarg_file:
-        xray = XrayWrapper(yaml.safe_load(kwarg_file))
-    # print(xray.get_test_repository_folders())
-    xray.make_dirs('/Test/A/B')
+    pass
+    # import yaml
+    # with open('../bddfile.yml', 'r', encoding='utf-8') as kwarg_file:
+    #     XrayWrapper(yaml.safe_load(kwarg_file)).make_dirs('/Test/A/B')
+    #     print(XrayWrapper(yaml.safe_load(kwarg_file)).get_test_repository_folders())

@@ -25,6 +25,27 @@ class Commands:
         return [i[1] for i in cls.__dict__.items() if not i[0].startswith('_') and isinstance(i[1], str)]
 
 
+def get_credentials(args) -> [str, str]:
+    if args.test_repository_user:
+        test_repository_user = args.user
+    elif 'TEST_REPOSITORY_USER' in dict(os.environ):
+        test_repository_user = os.environ['TEST_REPOSITORY_USER']
+    else:
+        test_repository_user = input('Enter repository user (or set TEST_REPOSITORY_USER environment variable): ')
+
+    if args.test_repository_pass:
+        test_repository_pass = args.user
+    elif 'TEST_REPOSITORY_PASS' in dict(os.environ):
+        test_repository_pass = os.environ['TEST_REPOSITORY_PASS']
+    else:
+        test_repository_pass = input('Enter repository pass (or set TEST_REPOSITORY_PASS environment variable): ')
+
+    if not test_repository_user or not test_repository_pass:
+        print('Invalid credentials')
+
+    return test_repository_user, test_repository_pass
+
+
 def main(arg_vars: list = None):
     arg_vars = (shlex.split(arg_vars) if isinstance(arg_vars, str) else arg_vars) if arg_vars else sys.argv[1:]
 
@@ -51,22 +72,8 @@ def main(arg_vars: list = None):
     with open(args.config, 'r', encoding='utf-8') as kwarg_file:
         config = yaml.safe_load(kwarg_file)
 
-    # credentials
-    if args.test_repository_user:
-        test_repository_user = args.user
-    elif 'TEST_REPOSITORY_USER' in dict(os.environ):
-        test_repository_user = os.environ['TEST_REPOSITORY_USER']
-    else:
-        test_repository_user = input('Enter repository user: ')
-    config['test_repository_user'] = test_repository_user
-
-    if args.test_repository_pass:
-        test_repository_pass = args.user
-    elif 'TEST_REPOSITORY_PASS' in dict(os.environ):
-        test_repository_pass = os.environ['TEST_REPOSITORY_PASS']
-    else:
-        test_repository_pass = input('Enter repository pass: ')
-    config['test_repository_pass'] = test_repository_pass
+    # add credentials to config
+    config['test_repository_user'], config['test_repository_pass'] = get_credentials(args)
 
     if command == Commands.TEST_REPOSITORY_FOLDERS:
         test_repository_folders_command(command_args, config)
@@ -121,6 +128,7 @@ def upload_features_command(command_args, config):
 
     feature_paths = []
     for path in paths:
+        path = path.replace(os.sep, '/')
         feature_paths += [f.replace(os.sep, '/') for f in glob.glob(path, recursive=True) if f.endswith('.feature')]
 
     features = []
@@ -131,49 +139,53 @@ def upload_features_command(command_args, config):
         print('No Feature found')
 
     xray = XrayWrapper(config)
+
+    # check if there are test with the same name, or id is invalid
+    total_errors = []
+    errors = []
     for feature in features:
-        print(f'Processing feature: {feature.name} (path="{feature.path}")')
+        issues = xray.get_issues_by_names([x.name for x in feature.scenarios])
+        for scenario in feature.scenarios:
+            occurrences = [issue['key'] for issue in issues if scenario.name == issue['fields']['summary']]
 
-        # check if there are test with the same name, or id is invalid
-        if issues := xray.get_issues_by_names([x.name for x in feature.scenarios]):
-            xray_keys = [issue['key'] for issue in issues]
-            invalids = []
-            for scenario in feature.scenarios:
-                if scenario.test_id not in xray_keys:
-                    invalids.append(scenario)
+            if not scenario.test_id:
+                errors.append(f"{scenario.name} has no id but already exists in test repository {occurrences}")
+            else:
+                if not occurrences:
+                    errors.append(f"{scenario.name} [{scenario.test_id}] "
+                                  f"has different name in test repository")
+                elif len(occurrences) == 1 and scenario.test_id != occurrences[0]:
+                    errors.append(f"{scenario.name} [{scenario.test_id}] "
+                                  f"has wrong id in test repository {occurrences}")
+                elif len(occurrences) > 1:
+                    errors.append(f"{scenario.name} [{scenario.test_id}] "
+                                  f"has duplicated names in test repository {occurrences}")
+        if errors:
+            print(f'Errors in feature: {feature.name} (path="{feature.path}")')
+            print(''.join([f" * {error}\n" for error in errors]), end='')
+            total_errors += errors
+            errors.clear()
 
-            summaries = [issue['fields']['summary'] for issue in issues]
-            duplicates = []
-            for issue in issues:
-                if summaries.count(issue['fields']['summary']) > 1:
-                    duplicates.append(issue)
+    if total_errors:
+        print("\nUpload stopped due to errors")
+        exit(1)
 
-            if invalids or duplicates:
-                print("Upload stopped due to errors:")
-                if invalids:
-                    print(f'  * Some scenarios from "{feature.path}" have different names in xray:\n' +
-                          ''.join([f"    - {scenario.test_id}: "
-                                   f"{scenario['fields']['summary']}\n" for scenario in invalids]))
-                if duplicates:
-                    print(f'  * Some issues are duplicated for scenarios in "{feature.path}":\n' +
-                          ''.join([f"    - {issue['key']}: "
-                                   f"{issue['fields']['summary']}\n" for issue in duplicates]))
-                exit(1)
-
+    duplicates = []
+    for feature in features:
+        print(f'Uploading feature: {feature.name} (path="{feature.path}")')
         new_scenario_ids = xray.import_feature(feature)
         for i, scenario in enumerate(feature.scenarios):
             new_scenario_id = new_scenario_ids[i]
             if not scenario.test_id:
                 scenario.test_id = new_scenario_id
-                print(f'Created Test: "{scenario.name}" [{scenario.test_id}]')
+                print(f' * Created Test: "{scenario.name}" [{scenario.test_id}]')
             elif scenario.test_id == new_scenario_id:
-                print(f'Updated Test: "{scenario.name}" [{scenario.test_id}]')
+                print(f' * Updated Test: "{scenario.name}" [{scenario.test_id}]')
             else:
-                if int(scenario.test_id.split('-')[1]) > int(new_scenario_id.split('-')[1]):
-                    hint = 'check if this key is the correct key'
-                else:
-                    hint = 'check if this key has to be removed'
-                print(f'Duplicated Test: "{scenario.name}" [{scenario.test_id}] -> {hint}: [{new_scenario_id}]')
+                duplicate = f' * Duplicated Test: "{scenario.name}" [{scenario.test_id}] -> ' \
+                            f'check if this key has to be removed: [{new_scenario_id}]'
+                print(duplicate)
+                duplicates.append(duplicate)
                 continue
 
             issues = xray.get_issue(new_scenario_id,
@@ -202,7 +214,15 @@ def upload_features_command(command_args, config):
         feature.repair_tags()
         print('Validating result')
         xray.import_feature(feature)
-        print(f'Feature updated successfully: {feature.name}\n')
+        print(f'Feature updated: {feature.name}\n')
+
+    if duplicates:
+        print("\nCheck these duplicated tests:")
+        for duplicate in duplicates:
+            print(duplicate)
+        exit(1)
+
+    print(f'\nProcess finished successfully')
 
 
 if __name__ == '__main__':
