@@ -98,7 +98,8 @@ class Scenario:
 
     @property
     def test_dir(self):
-        return '/' + self.feature.path.split('/features/')[1].replace(".feature", "")
+        features_root = self.cucumber.config['features'].replace('\\', '/').strip('/')
+        return '/' + self.feature.path.split(features_root + '/')[1].replace(".feature", "")
 
 
 class Feature:

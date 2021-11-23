@@ -126,10 +126,12 @@ def upload_features_command(command_args, config):
 
     cucumber = CucumberWrapper(config)
 
-    feature_paths = []
+    feature_paths = set()
     for path in paths:
         path = path.replace(os.sep, '/')
-        feature_paths += [f.replace(os.sep, '/') for f in glob.glob(path, recursive=True) if f.endswith('.feature')]
+        globs = glob.glob(path) + glob.glob(os.path.join(path, '**'), recursive=True)
+        [feature_paths.add(f.replace(os.sep, '/')) for f in globs if f.endswith('.feature')]
+    feature_paths = list(sorted(feature_paths))
 
     features = []
     for feature_path in feature_paths:
@@ -217,12 +219,12 @@ def upload_features_command(command_args, config):
         print(f'Feature updated: {feature.name}\n')
 
     if duplicates:
-        print("\nCheck these duplicated tests:")
+        print("Check these duplicated tests:")
         for duplicate in duplicates:
             print(duplicate)
         exit(1)
 
-    print(f'\nProcess finished successfully')
+    print(f'Process finished successfully')
 
 
 if __name__ == '__main__':
