@@ -90,7 +90,7 @@ def main(arg_vars: list = None):
 
 def test_repository_folders_command(command_args, config):
     parser = argparse.ArgumentParser(f"{NAME} [...] {Commands.TEST_REPOSITORY_FOLDERS}")
-    parser.add_argument('--folder', default='/', help='Choose a folder, else "root"')
+    parser.add_argument('--folder', default='/', help='folder to filter, else from root')
     args = parser.parse_args(command_args)
 
     xray = XrayWrapper(config)
@@ -105,7 +105,7 @@ def features_command(command_args, config):
 
     cucumber = CucumberWrapper(config)
     for feature in cucumber.features:
-        print(feature.name)
+        print(f'{feature.name} (path="{feature.path}")')
 
 
 def scenarios_command(command_args, config):
@@ -115,7 +115,7 @@ def scenarios_command(command_args, config):
     cucumber = CucumberWrapper(config)
     for feature in cucumber.features:
         for scenario in feature.scenarios:
-            print(scenario.name)
+            print(f'{scenario.name} (feature="{feature.name}")')
 
 
 def upload_features_command(command_args, config):
@@ -224,7 +224,7 @@ def upload_features_command(command_args, config):
             print(duplicate)
         exit(1)
 
-    print(f'Process finished successfully')
+    print(f'Process finished successfully\n')
 
 
 if __name__ == '__main__':
@@ -247,5 +247,5 @@ if __name__ == '__main__':
     # main([Commands.SCENARIOS])
     #
     # main([Commands.UPLOAD, '-h'])
-    # main([Commands.UPLOAD_FEATURES, r'features\Verisure OWA\Wrapper Android'])
-    # main([Commands.UPLOAD_FEATURES, r'C:\workspaces\bddsync\features\Verisure OWA\Web\actionplans.feature'])
+    # main([Commands.UPLOAD_FEATURES, r'C:\workspaces\bddsync\features\androidWrapper\*.feature'])
+    # main([Commands.UPLOAD_FEATURES, 'features/*Wrapper'])
