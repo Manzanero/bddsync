@@ -52,9 +52,10 @@ class XrayWrapper:
                                      auth=self.auth)
             try:
                 imported_scenarios = response.json()
+                tests = [x for x in imported_scenarios if x["issueType"]["name"] == "Test"]
             except json.decoder.JSONDecodeError:
                 raise Exception(f'Not a JSON response. Response:\n{response.text}')
-            if not len(imported_scenarios) == len(feature.scenarios):
+            if not len(tests) == len(feature.scenarios):
                 raise Exception(f'Some scenarios were not imported. Response:\n{response.text}')
             return [x['key'] for x in imported_scenarios]
 
