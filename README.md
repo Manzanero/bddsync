@@ -120,4 +120,24 @@ optional arguments:
   -h, --help  show this help message and exit
 ```
 
+### upload-result
+
+Upload test results in cucumber format:
+
+```
+$ bddsync [...] upload-features [-h] feature [feature ...]
+usage: bddsync [...] upload-features [-h] [-n NAME] [-e ENVIRONMENTS][-f FIX_VERSIONS]
+                                     [-t TEST_PLANS] [-l LABELS] result [result ...]
+
+positional arguments:
+  result
+
+optional arguments:
+  -h,              --help                       show this help message and exit
+  -n NAME,         --name NAME                  name of test execution
+  -e ENVIRONMENTS, --environments ENVIRONMENTS  comma separated environment names
+  -f FIX_VERSIONS, --fix_versions FIX_VERSIONS  comma separated fix versions
+  -t TEST_PLANS,   --test_plans TEST_PLANS      comma separated test plans IDs
+  -l LABELS,       --labels LABELS              comma separated labels
+```
 

@@ -83,6 +83,8 @@ def main(arg_vars: list = None):
         scenarios_command(command_args, config)
     elif command == Commands.UPLOAD_FEATURES:
         upload_features_command(command_args, config)
+    elif command == Commands.UPLOAD_RESULTS:
+        upload_results_command(command_args, config)
     else:
         print(f'Error: command "{command}" not managed yet')
         exit(1)
@@ -191,7 +193,7 @@ def upload_features_command(command_args, config):
                 continue
 
             issues = xray.get_issue(new_scenario_id,
-                                    ['labels', 'status', xray.TEST_REPOSITORY_PATH_FIELD, xray.TEST_PLANS_FIELD])
+                                    ['labels', 'status', xray.test_repository_path_field, xray.test_plans_field])
 
             # manage labels
             labels = issues['fields']['labels']
@@ -199,13 +201,13 @@ def upload_features_command(command_args, config):
             xray.remove_labels(new_scenario_id, labels_to_remove)
 
             # manage path
-            test_dir = issues['fields'][xray.TEST_REPOSITORY_PATH_FIELD]
+            test_dir = issues['fields'][xray.test_repository_path_field]
             if scenario.test_dir and scenario.test_dir != test_dir:
                 xray.make_dirs(scenario.test_dir)
                 xray.move_test_dir(new_scenario_id, scenario.test_dir)
 
             # manage plans
-            xray_test_plans = issues['fields'][xray.TEST_PLANS_FIELD]
+            xray_test_plans = issues['fields'][xray.test_plans_field]
             code_test_plans = [plan.id for plan in scenario.test_plans]
             code_test_plans_to_add = [plan for plan in code_test_plans if plan not in xray_test_plans]
             xray_test_plans_to_remove = [plan for plan in xray_test_plans if plan not in code_test_plans]
@@ -227,6 +229,39 @@ def upload_features_command(command_args, config):
     print(f'Process finished successfully\n')
 
 
+def upload_results_command(command_args, config):
+    parser = argparse.ArgumentParser(f"{NAME} [...] {Commands.UPLOAD_FEATURES}")
+    parser.add_argument('-n', '--name', help='name of test execution')
+    parser.add_argument('-e', '--environments', help='comma separated environment names')
+    parser.add_argument('-f', '--fix_versions', help='comma separated fix versions')
+    parser.add_argument('-t', '--test_plans', help='comma separated test plans IDs')
+    parser.add_argument('-l', '--labels', help='comma separated labels')
+    parser.add_argument('result', nargs='+')
+    args = parser.parse_args(command_args)
+
+    summary = args.name
+    environments = args.environments or args.environments.split(',')
+    fix_versions = args.fix_versions or args.fix_versions.split(',')
+    test_plan_keys = args.test_plans or args.test_plans.split(',')
+    labels = args.labels or args.labels.split(',')
+    paths = args.result
+
+    environments_dict = {e['alias']: e['id'] for e in config['test_environments']}
+    test_environments = []
+    for environment in environments:
+        if environment in environments_dict.values():
+            test_environments.append(environment)
+        elif environment in environments_dict.keys():
+            test_environments.append(environments_dict[environment])
+        else:
+            raise Exception('Not valid test environment')
+
+    xray = XrayWrapper(config)
+    for path in paths:
+        test_execution = xray.import_result(path, summary, test_environments, fix_versions, test_plan_keys, labels)
+        print(f"Created Test Execution [{test_execution['key']}]")
+
+
 if __name__ == '__main__':
     pass
     # main(['-h'])
@@ -241,11 +276,13 @@ if __name__ == '__main__':
     #
     # main([Commands.FEATURES, '-h'])
     # main([Commands.FEATURES])
-    # main([Commands.FEATURES, '--features-re-path', 'features/Web/**/*.feature'])
     #
     # main([Commands.SCENARIOS, '-h'])
     # main([Commands.SCENARIOS])
     #
-    # main([Commands.UPLOAD, '-h'])
+    # main([Commands.UPLOAD_FEATURES, '-h'])
     # main([Commands.UPLOAD_FEATURES, r'C:\workspaces\bddsync\features\androidWrapper\*.feature'])
     # main([Commands.UPLOAD_FEATURES, 'features/*Wrapper'])
+    #
+    # main([Commands.UPLOAD_RESULTS, '-h'])
+    # main([Commands.UPLOAD_RESULTS, 'output/result.json'])

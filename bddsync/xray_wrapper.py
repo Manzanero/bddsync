@@ -1,4 +1,5 @@
 import json
+import time
 
 import requests
 
@@ -22,9 +23,13 @@ class XrayWrapper:
 
         for field in config['xray']['fields']:
             if field['name'] == 'test_repository_path':
-                self.TEST_REPOSITORY_PATH_FIELD = field['key']
-            if field['name'] == 'test_plans':
-                self.TEST_PLANS_FIELD = field['key']
+                self.test_repository_path_field = field['key']
+            elif field['name'] == 'test_plans':
+                self.test_plans_field = field['key']
+            elif field['name'] == 'execution_test_plans':
+                self.execution_test_plans_field = field['key']
+            elif field['name'] == 'execution_test_environments':
+                self.execution_test_environments_field = field['key']
 
     def get_test_repository_folders(self, path='/') -> list[Folder]:
         response = requests.get(f'{self.base_url}/rest/raven/1.0/api/testrepository/'
@@ -46,10 +51,12 @@ class XrayWrapper:
 
     def import_feature(self, feature):
         try:
-            response = requests.post(f'{self.base_url}/rest/raven/1.0/import/feature',
-                                     params={'projectKey': self.project_key},
-                                     files={'file': open(feature.path, 'r', encoding='utf-8')},
-                                     auth=self.auth)
+            response = requests.post(
+                f'{self.base_url}/rest/raven/1.0/import/feature',
+                params={'projectKey': self.project_key},
+                files={'file': open(feature.path, 'r', encoding='utf-8')},
+                auth=self.auth
+            )
             try:
                 imported_scenarios = response.json()
                 tests = [x for x in imported_scenarios if x["issueType"]["name"] == "Test"]
@@ -73,9 +80,11 @@ class XrayWrapper:
 
         summary_conditions = 'or '.join([f"summary ~ '{_replaces(x)}' " for x in names])
         jql = f'project = {self.project_key} and ' + summary_conditions
-        response = requests.post(f'{self.base_url}/rest/api/2/search',
-                                 json={"jql": jql, "maxResults": 1000, "fields": ['summary']},
-                                 auth=self.auth)
+        response = requests.post(
+            f'{self.base_url}/rest/api/2/search',
+            json={"jql": jql, "maxResults": 1000, "fields": ['summary']},
+            auth=self.auth
+        )
         if response.status_code != 200:
             raise Exception(f'ERROR: Cannot get search due to error: '
                             f'(status code: {response.status_code}) {response.text}')
@@ -83,35 +92,41 @@ class XrayWrapper:
         try:
             return response.json()['issues']
         except json.decoder.JSONDecodeError:
-            raise Exception(f'Not a JSON response. Response:\n{response.text}')
+            raise Exception(f'Not a JSON response. Response:\n{response.text}') from None
 
     def get_issue(self, issue_key: str, fields: list[str]) -> dict:
-        response = requests.get(f"{self.base_url}/rest/api/2/issue/{issue_key}?fields={','.join(fields)}",
-                                auth=self.auth)
+        response = requests.get(
+            f"{self.base_url}/rest/api/2/issue/{issue_key}?fields={','.join(fields)}",
+            auth=self.auth
+        )
         if response.status_code != 200:
             raise Exception(f'ERROR: Cannot get labels from [{issue_key}] due to error: '
                             f'(status code: {response.status_code}) {response.text}')
         try:
             return response.json()
         except json.decoder.JSONDecodeError:
-            raise Exception(f'Not a JSON response. Response:\n{response.text}')
+            raise Exception(f'Not a JSON response. Response:\n{response.text}') from None
 
     def rename_issue(self, issue_key: str, summary: str) -> dict:
-        response = requests.put(f"{self.base_url}/rest/api/2/issue/{issue_key}",
-                                json={"fields": {"summary": summary}},
-                                auth=self.auth)
+        response = requests.put(
+            f"{self.base_url}/rest/api/2/issue/{issue_key}",
+            json={"fields": {"summary": summary}},
+            auth=self.auth
+        )
         if response.status_code != 200:
             raise Exception(f'ERROR: Cannot rename [{issue_key}] due to error: '
                             f'(status code: {response.status_code}) {response.text}')
         try:
             return response.json()
         except json.decoder.JSONDecodeError:
-            raise Exception(f'Not a JSON response. Response:\n{response.text}')
+            raise Exception(f'Not a JSON response. Response:\n{response.text}') from None
 
     def remove_labels(self, issue_key: str, labels: list):
-        response = requests.put(f'{self.base_url}/rest/api/2/issue/{issue_key}',
-                                json={"update": {"labels": [{"remove": label} for label in labels]}},
-                                auth=self.auth)
+        response = requests.put(
+            f'{self.base_url}/rest/api/2/issue/{issue_key}',
+            json={"update": {"labels": [{"remove": label} for label in labels]}},
+            auth=self.auth
+        )
         if response.status_code != 204:
             raise Exception(f'ERROR: Cannot remove labels {labels} from [{issue_key}] due to error: '
                             f'(status code: {response.status_code}) {response.text}')
@@ -122,7 +137,8 @@ class XrayWrapper:
             response = requests.post(
                 f'{self.base_url}/rest/raven/1.0/api/testplan/{test_plan_key}/test',
                 json={"add": issue_keys},
-                auth=self.auth)
+                auth=self.auth
+            )
             if response.status_code != 200:
                 raise Exception(f'ERROR: Cannot add {issue_keys} to test plan: [{test_plan_key}]')
 
@@ -132,7 +148,8 @@ class XrayWrapper:
             response = requests.post(
                 f'{self.base_url}/rest/raven/1.0/api/testplan/{test_plan_key}/test',
                 json={"remove": issue_keys},
-                auth=self.auth)
+                auth=self.auth
+            )
             if response.status_code != 200:
                 raise Exception(f'ERROR: Cannot add {issue_keys} to test plan: [{test_plan_key}]')
 
@@ -140,8 +157,9 @@ class XrayWrapper:
         print(f'[{issue_key}] move to directory: {test_dir}')
         response = requests.put(
             f'{self.base_url}/rest/api/2/issue/{issue_key}',
-            json={"fields": {self.TEST_REPOSITORY_PATH_FIELD: test_dir}},
-            auth=self.auth)
+            json={"fields": {self.test_repository_path_field: test_dir}},
+            auth=self.auth
+        )
         if response.status_code != 204:
             raise Exception(f'ERROR: Cannot move [{issue_key}] to folder "{test_dir}" due to error: {response.text}')
 
@@ -165,15 +183,64 @@ class XrayWrapper:
                 response = requests.post(
                     f'{self.base_url}/rest/raven/1.0/api/testrepository/{self.project_key}/folders/{parent_folder_id}',
                     json={"name": path_token},
-                    auth=self.auth)
+                    auth=self.auth
+                )
                 if response.status_code != 200:
                     raise Exception(f'ERROR: Cannot create folder "{folder_path}"')
                 parent_folder_id = response.json()['id']
+
+    def import_result(self, result_path: str, summary: str = None, test_environments: list[str] = None,
+                      fix_versions: list[str] = None, test_plan_keys: list[str] = None, labels: list[str] = None):
+        print(f'Uploading result (path="{result_path}")')
+        if test_plan_keys:
+            print(f'Adding result to test plans {test_plan_keys}')
+
+        summary = summary or f"Imported test execution {int(time.time())}"
+        info = {"fields": {"project": {"key": self.project_key}, "summary": summary}}
+        if test_plan_keys:
+            info['fields'][self.execution_test_plans_field] = test_plan_keys  # noqa
+        if test_environments:
+            info['fields'][self.execution_test_environments_field] = test_environments  # noqa
+        if fix_versions:
+            info['fields']['fixVersions'] = [{"name": fix_version} for fix_version in fix_versions]  # noqa
+        if labels:
+            info['fields']['labels'] = labels  # noqa
+
+        response = requests.post(
+            f'{self.base_url}/rest/raven/1.0/import/execution/cucumber/multipart',
+            files={'result': open(result_path, 'rb'), 'info': json.dumps(info)},
+            auth=self.auth
+        )
+        if response.status_code != 200:
+            raise Exception(f'Cannot import result due to error: '
+                            f'(status code: {response.status_code}) {response.text}')
+        print(response.json()['testExecIssue'])
+
+        if response.status_code != 200:
+            raise Exception(f'Cannot import result due to error: '
+                            f'(status code: {response.status_code}) {response.text}')
+        try:
+            return response.json()['testExecIssue']
+        except KeyError:
+            raise Exception(f'Not a test execution issue response. Response:\n{response.text}')
+        except json.decoder.JSONDecodeError:
+            raise Exception(f'Not a JSON response. Response:\n{response.text}') from None
 
 
 if __name__ == '__main__':
     pass
     # import yaml
     # with open('../bddfile.yml', 'r', encoding='utf-8') as kwarg_file:
-    #     XrayWrapper(yaml.safe_load(kwarg_file)).make_dirs('/Test/A/B')
-    #     print(XrayWrapper(yaml.safe_load(kwarg_file)).get_test_repository_folders())
+    #     pass
+    #     # config = yaml.safe_load(kwarg_file)
+    #     # config['test_repository_user'] = os.environ['TEST_REPOSITORY_USER']
+    #     # config['test_repository_pass'] = os.environ['TEST_REPOSITORY_PASS']
+    #     # XrayWrapper(config).make_dirs('/Test/A/B')
+    #     # print(XrayWrapper(config).get_test_repository_folders())
+    #     # XrayWrapper(config).import_result(
+    #     #     '../output/result.json',
+    #     #     environments=['INT'],
+    #     #     fix_versions=['RW21_23'],
+    #     #     test_plan_keys=['DCH-6689'],
+    #     #     labels=['a']
+    #     # )
