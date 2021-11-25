@@ -140,7 +140,7 @@ def upload_features_command(command_args, config):
         features += cucumber.get_features(feature_path)
 
     if not features:
-        print('No Feature found')
+        print('No features found')
 
     xray = XrayWrapper(config)
 
@@ -230,36 +230,65 @@ def upload_features_command(command_args, config):
 
 
 def upload_results_command(command_args, config):
-    parser = argparse.ArgumentParser(f"{NAME} [...] {Commands.UPLOAD_FEATURES}")
+    parser = argparse.ArgumentParser(f"{NAME} [...] {Commands.UPLOAD_RESULTS}")
     parser.add_argument('-n', '--name', help='name of test execution')
     parser.add_argument('-e', '--environments', help='comma separated environment names')
-    parser.add_argument('-f', '--fix_versions', help='comma separated fix versions')
-    parser.add_argument('-t', '--test_plans', help='comma separated test plans IDs')
+    parser.add_argument('-f', '--fix-versions', help='comma separated fix versions')
+    parser.add_argument('-p', '--test-plans', help='comma separated test plans IDs')
     parser.add_argument('-l', '--labels', help='comma separated labels')
-    parser.add_argument('result', nargs='+')
+    parser.add_argument('result', nargs='?')
     args = parser.parse_args(command_args)
 
     summary = args.name
-    environments = args.environments or args.environments.split(',')
-    fix_versions = args.fix_versions or args.fix_versions.split(',')
-    test_plan_keys = args.test_plans or args.test_plans.split(',')
-    labels = args.labels or args.labels.split(',')
-    paths = args.result
+    environments = args.environments.split(',') if args.environments else None
+    fix_versions = args.fix_versions.split(',') if args.fix_versions else None
+    test_plan_keys = args.test_plans.split(',') if args.test_plans else None
+    labels = args.labels.split(',') if args.labels else None
+    path = args.result
 
-    environments_dict = {e['alias']: e['id'] for e in config['test_environments']}
-    test_environments = []
-    for environment in environments:
-        if environment in environments_dict.values():
-            test_environments.append(environment)
-        elif environment in environments_dict.keys():
-            test_environments.append(environments_dict[environment])
-        else:
-            raise Exception('Not valid test environment')
+    # check environments
+    if environments and 'test_environments' in config:
+        test_environments = []
+        for environment in environments:
+            if environment in config['test_environments'].values():
+                test_environments.append(environment)
+            elif environment in config['test_environments']:
+                test_environments.append(config['test_environments'][environment])
+            else:
+                print('Not valid test environment')
+                exit(1)
+    else:
+        test_environments = environments
+    if not test_environments and 'execution_test_environments' in config['required']:
+        print(f"Execution test environment is required for this project {config['test_environments']}")
+        print("use the flag: --environments ENVIRONMENT")
+        exit(1)
+
+    # check fix version
+    if not fix_versions and 'execution_fix_version' in config['required']:
+        print(f"Execution fix version is required for this project")
+        print("use the flag: --fix-versions FIX_VERSION")
+        exit(1)
+
+    # check test plan
+    if not test_plan_keys and 'execution_test_plans' in config['required']:
+        print(f"Execution test plan is required for this project")
+        print("use the flag: --test-plans TEST_PLAN")
+        exit(1)
+
+    # check result
+    result_path = path or config['result']
+    if not os.path.isfile(result_path):
+        print(f'No results found in selected path {result_path}')
+        exit(1)
 
     xray = XrayWrapper(config)
-    for path in paths:
-        test_execution = xray.import_result(path, summary, test_environments, fix_versions, test_plan_keys, labels)
-        print(f"Created Test Execution [{test_execution['key']}]")
+    print(f'Uploading result (path="{result_path}")')
+    if test_plan_keys:
+        print(f'Adding result to test plans {test_plan_keys}')
+    test_execution = xray.import_result(result_path, summary, test_environments, fix_versions, test_plan_keys, labels)
+    print(f" * Created Test Execution [{test_execution['key']}] "
+          f"(url={xray.base_url}/browse/{test_execution['key']})")
 
 
 if __name__ == '__main__':
@@ -281,8 +310,9 @@ if __name__ == '__main__':
     # main([Commands.SCENARIOS])
     #
     # main([Commands.UPLOAD_FEATURES, '-h'])
-    # main([Commands.UPLOAD_FEATURES, r'C:\workspaces\bddsync\features\androidWrapper\*.feature'])
+    # main([Commands.UPLOAD_FEATURES, r'C:\workspaces\bddsync/features/Verisure OWA/Wrapper Android/actionplansWrapperAndroid.feature'])
     # main([Commands.UPLOAD_FEATURES, 'features/*Wrapper'])
     #
     # main([Commands.UPLOAD_RESULTS, '-h'])
-    # main([Commands.UPLOAD_RESULTS, 'output/result.json'])
+    # main([Commands.UPLOAD_RESULTS, '-e', 'STG', '-f', 'RW21_23', '-p', 'DCH-6689'])
+    main([Commands.UPLOAD_RESULTS, 'output/result.json'])

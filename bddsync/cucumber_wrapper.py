@@ -43,7 +43,7 @@ class Scenario:
         return f'Scenario (name="{self.name}")'
 
     def _find_test_id(self):
-        if self.cucumber.config['test_repository_type'] == 'xray':
+        if self.cucumber.config['test_repository'] == 'xray':
             for tag in self.tags:
                 match = re.findall(r'^\w+-\d+$', tag)
                 if match and \
@@ -53,20 +53,20 @@ class Scenario:
                     return
 
     def _find_test_plans(self):
-        if self.cucumber.config['test_repository_type'] == 'xray':
+        if self.cucumber.config['test_repository'] == 'xray':
             for test_plan in self.cucumber.test_plans:
                 if test_plan.tag in self.effective_tags:
                     self.test_plans.append(test_plan)
 
     def _find_test_sets(self):
-        if self.cucumber.config['test_repository_type'] == 'xray':
+        if self.cucumber.config['test_repository'] == 'xray':
             for test_set in self.cucumber.test_sets:
                 if test_set.tag in self.effective_tags:
                     self.test_sets.append(test_set)
 
     @property
     def _tags_block(self):
-        if self.cucumber.config['test_repository_type'] == 'xray':
+        if self.cucumber.config['test_repository'] == 'xray':
             tags = set(self.tags)
             tags_line1 = ['@automated']
             tags.discard('automated')
@@ -132,14 +132,14 @@ class Feature:
             f.write(text)
 
     def _find_test_plans(self):
-        if self.cucumber.config['test_repository_type'] == 'xray':
+        if self.cucumber.config['test_repository'] == 'xray':
             for test_plan in self.cucumber.test_plans:
                 if test_plan.tag in self.tags:
                     self.test_plans.append(test_plan)
 
     @property
     def _tags_block(self):
-        if self.cucumber.config['test_repository_type'] == 'xray':
+        if self.cucumber.config['test_repository'] == 'xray':
             tags = set(self.tags)
             tags_line1 = []
             for test_plan in self.test_plans:
@@ -168,8 +168,8 @@ class CucumberWrapper:
         self.features_root_path: str = config['features']
         self.result: str = config['result']
         self.features_re_path: str = os.path.join(self.features_root_path, '**/*.feature')
-        self.test_plans = [TestPlan(x['tag'], x['id']) for x in config['test_plans']]
-        self.test_sets = [TestSet(x['tag'], x['id']) for x in config['test_sets']]
+        self.test_plans = [TestPlan(k, v) for k, v in config['test_plans'].items()]
+        self.test_sets = [TestSet(k, v) for k, v in config['test_sets'].items()]
 
     @property
     def features(self) -> list[Feature]:

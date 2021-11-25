@@ -17,19 +17,15 @@ class Folder:
 class XrayWrapper:
 
     def __init__(self, config):
-        self.base_url = config['xray']['url']
+        self.base_url = config['url']
         self.auth = config['test_repository_user'], config['test_repository_pass']
-        self.project_key = config['test_project_id']
+        self.project_key = config['test_project']
 
-        for field in config['xray']['fields']:
-            if field['name'] == 'test_repository_path':
-                self.test_repository_path_field = field['key']
-            elif field['name'] == 'test_plans':
-                self.test_plans_field = field['key']
-            elif field['name'] == 'execution_test_plans':
-                self.execution_test_plans_field = field['key']
-            elif field['name'] == 'execution_test_environments':
-                self.execution_test_environments_field = field['key']
+        self.test_repository_path_field = config['fields']['test_repository_path']
+        self.test_plans_field = config['fields']['test_plans']
+        self.execution_test_plans_field = config['fields']['execution_test_plans']
+        self.execution_test_environments_field = config['fields']['execution_test_environments']
+        self.execution_fix_versions_field = config['fields']['execution_fix_versions']
 
     def get_test_repository_folders(self, path='/') -> list[Folder]:
         response = requests.get(f'{self.base_url}/rest/raven/1.0/api/testrepository/'
@@ -191,10 +187,6 @@ class XrayWrapper:
 
     def import_result(self, result_path: str, summary: str = None, test_environments: list[str] = None,
                       fix_versions: list[str] = None, test_plan_keys: list[str] = None, labels: list[str] = None):
-        print(f'Uploading result (path="{result_path}")')
-        if test_plan_keys:
-            print(f'Adding result to test plans {test_plan_keys}')
-
         summary = summary or f"Imported test execution {int(time.time())}"
         info = {"fields": {"project": {"key": self.project_key}, "summary": summary}}
         if test_plan_keys:
@@ -202,7 +194,7 @@ class XrayWrapper:
         if test_environments:
             info['fields'][self.execution_test_environments_field] = test_environments  # noqa
         if fix_versions:
-            info['fields']['fixVersions'] = [{"name": fix_version} for fix_version in fix_versions]  # noqa
+            info['fields'][self.execution_fix_versions_field] = [{"name": fix_version} for fix_version in fix_versions]  # noqa
         if labels:
             info['fields']['labels'] = labels  # noqa
 
@@ -214,33 +206,28 @@ class XrayWrapper:
         if response.status_code != 200:
             raise Exception(f'Cannot import result due to error: '
                             f'(status code: {response.status_code}) {response.text}')
-        print(response.json()['testExecIssue'])
-
-        if response.status_code != 200:
-            raise Exception(f'Cannot import result due to error: '
-                            f'(status code: {response.status_code}) {response.text}')
         try:
-            return response.json()['testExecIssue']
+            test_execution = response.json()['testExecIssue']
+            return test_execution
         except KeyError:
-            raise Exception(f'Not a test execution issue response. Response:\n{response.text}')
+            raise Exception(f'Not a test execution issue in response. Response:\n{response.text}')
         except json.decoder.JSONDecodeError:
             raise Exception(f'Not a JSON response. Response:\n{response.text}') from None
 
 
-if __name__ == '__main__':
-    pass
-    # import yaml
-    # with open('../bddfile.yml', 'r', encoding='utf-8') as kwarg_file:
-    #     pass
-    #     # config = yaml.safe_load(kwarg_file)
-    #     # config['test_repository_user'] = os.environ['TEST_REPOSITORY_USER']
-    #     # config['test_repository_pass'] = os.environ['TEST_REPOSITORY_PASS']
-    #     # XrayWrapper(config).make_dirs('/Test/A/B')
-    #     # print(XrayWrapper(config).get_test_repository_folders())
-    #     # XrayWrapper(config).import_result(
-    #     #     '../output/result.json',
-    #     #     environments=['INT'],
-    #     #     fix_versions=['RW21_23'],
-    #     #     test_plan_keys=['DCH-6689'],
-    #     #     labels=['a']
-    #     # )
+# if __name__ == '__main__':
+#     import yaml
+#     import os
+#     with open('../bddfile.yml', 'r', encoding='utf-8') as kwarg_file:
+#         config = yaml.safe_load(kwarg_file)
+#         config['test_repository_user'] = os.environ['TEST_REPOSITORY_USER']
+#         config['test_repository_pass'] = os.environ['TEST_REPOSITORY_PASS']
+#         # XrayWrapper(config).make_dirs('/Test/A/B')
+#         # print(XrayWrapper(config).get_test_repository_folders())
+#         # XrayWrapper(config).import_result(
+#         #     '../output/result.json',
+#         #     test_environments=['INT'],
+#         #     fix_versions=['RW21_23'],
+#         #     test_plan_keys=['DCH-6689'],
+#         #     labels=['a']
+#         # )

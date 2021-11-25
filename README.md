@@ -8,34 +8,40 @@ Place a file named `bddfile.yml` in project root directory. Following this examp
 
 ``` yaml
 version: <bddfile_version (default=1)>
-features: <features_root_folder (default=features/)>
-result: <result_file_path (default=output/result.json)>
-code_repository_type: <code_repository_type (default=behave)>
-test_repository_type: <code_repository_type (default=xray)>
-test_project_id: <test_project_id (required)>
+framework: <framework (example=behave)>
+features: <features_root_folder (example=features/)>
+result: <result_file_path (example=output/result.json)>
+
+url: <jira_base_url (required, example=https://jira.xxx.com)>
+test_repository: <test_repository_type (example=xray)>
+test_project: <test_project_id (required)>
+
 test_plans:
-  - tag: <tracked_test_plan_tag_1>
-    id: <tracked_test_plan_id_1>
-  - tag: <tracked_test_plan_tag_2>
-    id: <tracked_test_plan_id_2>
+  - <tracked_test_plan_tag_1>: <tracked_test_plan_id_1>
+  - <tracked_test_plan_tag_2>: <tracked_test_plan_id_2>
     ...
+    
 test_sets:
-  - tag: <tracked_test_sets_tag_1>
-    id: <tracked_test_sets_id_1>
-  - tag: <tracked_test_sets_tag_2>
-    id: <tracked_test_sets_id_2>
+  - <tracked_test_sets_tag_1>: <tracked_test_sets_id_1>
+  - <tracked_test_sets_tag_2>: <tracked_test_sets_id_2>
     ...
-
-xray:
-  url: <jira_base_url (required, example=https://jira.xxx.com)>
-  fields:
-    - name: test_repository_path <jira_url (required)>
-      key: <test_repository_path_field (required, example=customfield_123456)>
-      type: str
-    - name: test_plans
-      key: <test_plans_field (required, example=customfield_654321)>
-      type: list[str]
-
+    
+test_environments:
+  - <test_environments_alias_1>: <test_environments_id_1>
+  - <test_environments_alias_2>: <test_environments_id_2>
+    ...
+    
+fields:
+  - test_repository_path: <test_repository_path_field (required, example=customfield_123456)>
+  - test_plans: <test_plans_field (required, example=customfield_123456)>
+  - execution_test_plans: <execution_test_plans_field (required, example=customfield_123456)>
+  - execution_test_environments: <execution_test_environments_field (required, example=customfield_123456)>
+  - execution_fix_versions: fixVersions
+  
+required:
+  - <required_field_1 (example=execution_test_environments)>
+  - <required_field_2 (example=execution_fix_versions)>
+    ...
 ```
 
 In each use, bddsync ask for credentials. To avoid this behaviour, set the environment variables 
@@ -120,14 +126,14 @@ optional arguments:
   -h, --help  show this help message and exit
 ```
 
-### upload-result
+### upload-results
 
 Upload test results in cucumber format:
 
 ```
-$ bddsync [...] upload-features [-h] feature [feature ...]
-usage: bddsync [...] upload-features [-h] [-n NAME] [-e ENVIRONMENTS][-f FIX_VERSIONS]
-                                     [-t TEST_PLANS] [-l LABELS] result [result ...]
+$ bddsync [...] upload-results [-h] feature [feature ...]
+usage: bddsync [...] upload-results [-h] [-n NAME] [-e ENVIRONMENTS][-f FIX_VERSIONS]
+                                    [-p TEST_PLANS] [-l LABELS] result
 
 positional arguments:
   result
@@ -136,8 +142,8 @@ optional arguments:
   -h,              --help                       show this help message and exit
   -n NAME,         --name NAME                  name of test execution
   -e ENVIRONMENTS, --environments ENVIRONMENTS  comma separated environment names
-  -f FIX_VERSIONS, --fix_versions FIX_VERSIONS  comma separated fix versions
-  -t TEST_PLANS,   --test_plans TEST_PLANS      comma separated test plans IDs
+  -f FIX_VERSIONS, --fix-versions FIX_VERSIONS  comma separated fix versions
+  -p TEST_PLANS,   --test-plans TEST_PLANS      comma separated test plans IDs
   -l LABELS,       --labels LABELS              comma separated labels
 ```
 
