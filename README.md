@@ -7,14 +7,14 @@ Tools to synchronize BDD files with test management tools like Jira-Xray
 Place a file named `bddfile.yml` in project root directory. Following this example: 
 
 ``` yaml
-version: <bddfile_version (default=1)>
+version: <bddfile_version (example=1)>
 framework: <framework (example=behave)>
 features: <features_root_folder (example=features/)>
 result: <result_file_path (example=output/result.json)>
 
-url: <jira_base_url (required, example=https://jira.xxx.com)>
+url: <jira_base_url (example=https://jira.xxx.com)>
 test_repository: <test_repository_type (example=xray)>
-test_project: <test_project_id (required)>
+test_project: <test_project_id>
 
 test_plans:
   - <tracked_test_plan_tag_1>: <tracked_test_plan_id_1>
@@ -32,10 +32,10 @@ test_environments:
     ...
     
 fields:
-  - test_repository_path: <test_repository_path_field (required, example=customfield_123456)>
-  - test_plans: <test_plans_field (required, example=customfield_123456)>
-  - execution_test_plans: <execution_test_plans_field (required, example=customfield_123456)>
-  - execution_test_environments: <execution_test_environments_field (required, example=customfield_123456)>
+  - test_repository_path: <test_repository_path_field (example=customfield_123456)>
+  - test_plans: <test_plans_field (example=customfield_123456)>
+  - execution_test_plans: <execution_test_plans_field (example=customfield_123456)>
+  - execution_test_environments: <execution_test_environments_field (example=customfield_123456)>
   - execution_fix_versions: fixVersions
   
 required:
@@ -52,7 +52,8 @@ In each use, bddsync ask for credentials. To avoid this behaviour, set the envir
 Start with `bddsync` (with optional arguments) followed by the command:
 
 ```
-$ bddsync [-h] [--config CONFIG] [-u TEST_REPOSITORY_USER] [-p TEST_REPOSITORY_PASS] COMMAND [-h] [...]
+$ bddsync [-h] [--config CONFIG] 
+          [-u TEST_REPOSITORY_USER] [-p TEST_REPOSITORY_PASS] COMMAND [-h] [...]
 
 optional arguments:
   -h, --help               show this help message and exit
@@ -131,9 +132,8 @@ optional arguments:
 Upload test results in cucumber format:
 
 ```
-$ bddsync [...] upload-results [-h] feature [feature ...]
-usage: bddsync [...] upload-results [-h] [-n NAME] [-e ENVIRONMENTS][-f FIX_VERSIONS]
-                                    [-p TEST_PLANS] [-l LABELS] result
+$ bddsync [...] upload-results [-h] [-n NAME] [-e ENVIRONMENTS] [-f FIX_VERSIONS]
+                               [-p TEST_PLANS] [-l LABELS] result
 
 positional arguments:
   result
