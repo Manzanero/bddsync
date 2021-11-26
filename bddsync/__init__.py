@@ -315,4 +315,4 @@ if __name__ == '__main__':
     #
     # main([Commands.UPLOAD_RESULTS, '-h'])
     # main([Commands.UPLOAD_RESULTS, '-e', 'STG', '-f', 'RW21_23', '-p', 'DCH-6689'])
-    main([Commands.UPLOAD_RESULTS, 'output/result.json'])
+    # main([Commands.UPLOAD_RESULTS, 'output/result.json'])

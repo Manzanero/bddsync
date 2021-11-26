@@ -14,28 +14,28 @@ result: <result_file_path (example=output/result.json)>
 
 url: <jira_base_url (example=https://jira.xxx.com)>
 test_repository: <test_repository_type (example=xray)>
-test_project: <test_project_id>
+test_project: <test_project_id (example=ABC)>
 
 test_plans:
-  - <tracked_test_plan_tag_1>: <tracked_test_plan_id_1>
-  - <tracked_test_plan_tag_2>: <tracked_test_plan_id_2>
+  - <tracked_test_plan_tag_1>: <tracked_test_plan_id_1 (example=ABC-123)>
+  - <tracked_test_plan_tag_2>: <tracked_test_plan_id_2 (example=ABC-321)>
     ...
     
 test_sets:
-  - <tracked_test_sets_tag_1>: <tracked_test_sets_id_1>
-  - <tracked_test_sets_tag_2>: <tracked_test_sets_id_2>
+  - <tracked_test_sets_tag_1>: <tracked_test_sets_id_1 (example=ABC-456)>
+  - <tracked_test_sets_tag_2>: <tracked_test_sets_id_2 (example=ABC-654)>
     ...
     
 test_environments:
-  - <test_environments_alias_1>: <test_environments_id_1>
-  - <test_environments_alias_2>: <test_environments_id_2>
+  - <test_environments_alias_1>: <test_environments_id_1 (example=INT)>
+  - <test_environments_alias_2>: <test_environments_id_2 (example=PRO)>
     ...
     
 fields:
-  - test_repository_path: <test_repository_path_field (example=customfield_123456)>
-  - test_plans: <test_plans_field (example=customfield_123456)>
-  - execution_test_plans: <execution_test_plans_field (example=customfield_123456)>
-  - execution_test_environments: <execution_test_environments_field (example=customfield_123456)>
+  - test_repository_path: <test_repository_path_field (example=customfield_12)>
+  - test_plans: <test_plans_field (example=customfield_34)>
+  - execution_test_plans: <execution_test_plans_field (example=customfield_56)>
+  - execution_test_environments: <execution_test_environments_field (example=customfield_78)>
   - execution_fix_versions: fixVersions
   
 required:
@@ -107,16 +107,17 @@ optional arguments:
 
 Updates the test repository according to these guidelines:
   - Tags will be repaired and reordered, (1st line for tracked tags, 2nd line for other tags)
-  - New scenarios in code will be created them in test repository and receive their ID in code
-  - Updated scenarios in code will be updated them in test repository
-  - Deleted scenarios in code **won't be deleted** in test repository, the user updates test in repository manually
-  - Renamed scenario in code **won't be renamed** in test repository, **the user will be warned and process stops**, the user updates test in repository manually
-  - Tracked test plan tag added to a scenario will add the test to test plan
-  - Tracked test plan tag removed to a scenario will remove the test from test plan
+  - New scenarios in code will be created in test repository and receive their ID in code
+  - Updated scenarios in code will be updated in test repository
+  - Deleted scenarios in code **won't be deleted** in test repository, the user deletes tests in repository manually
+  - Renamed scenario in code **won't be renamed** in test repository, **the user will be warned and process stops**, 
+    the user renames tests in repository manually
+  - Tracked test plan tag added to a scenario will add the test to the test plan
+  - Tracked test plan tag removed from a scenario will remove the test from the test plan
   - If there are duplicated test names, **the user will be warned and process stops**
-  - If scenario were duplicated during process (fixes in progress), **the user will be warned**
-
-Tip: avoid create tests in test repository first, test may be duplicated with this process
+  - If scenario were duplicated while process (fixes in progress), **the user will be warned but process doesn't stop**,
+    the user deletes duplicated tests in repository manually
+    (Tip: for Xray, avoid create tests in test repository first, the tests may be duplicated with this process)
 
 ```
 $ bddsync [...] upload-features [-h] feature [feature ...]
