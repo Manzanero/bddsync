@@ -66,6 +66,7 @@ commands available:
   features
   scenarios
   upload-features
+  upload-results
 ```
 
 ### test-repository-folders

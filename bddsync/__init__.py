@@ -131,7 +131,7 @@ def upload_features_command(command_args, config):
     feature_paths = set()
     for path in paths:
         path = path.replace(os.sep, '/')
-        globs = glob.glob(path) + glob.glob(os.path.join(path, '**'), recursive=True)
+        globs = glob.glob(path, recursive=True) + glob.glob(os.path.join(path, '**'), recursive=True)
         [feature_paths.add(f.replace(os.sep, '/')) for f in globs if f.endswith('.feature')]
     feature_paths = list(sorted(feature_paths))
 
@@ -152,7 +152,7 @@ def upload_features_command(command_args, config):
         for scenario in feature.scenarios:
             occurrences = [issue['key'] for issue in issues if scenario.name == issue['fields']['summary']]
 
-            if not scenario.test_id:
+            if not scenario.test_id and occurrences:
                 errors.append(f"{scenario.name} has no id but already exists in test repository {occurrences}")
             else:
                 if not occurrences:
