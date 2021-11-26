@@ -154,7 +154,7 @@ def upload_features_command(command_args, config):
 
             if not scenario.test_id and occurrences:
                 errors.append(f"{scenario.name} has no id but already exists in test repository {occurrences}")
-            else:
+            elif scenario.test_id:
                 if not occurrences:
                     errors.append(f"{scenario.name} [{scenario.test_id}] "
                                   f"has different name in test repository")
