@@ -17,26 +17,26 @@ test_repository: <test_repository_type (example=xray)>
 test_project: <test_project_id (example=ABC)>
 
 test_plans:
-  - <tracked_test_plan_tag_1>: <tracked_test_plan_id_1 (example=ABC-123)>
-  - <tracked_test_plan_tag_2>: <tracked_test_plan_id_2 (example=ABC-321)>
+  <tracked_test_plan_tag_1>: <tracked_test_plan_id_1 (example=ABC-123)>
+  <tracked_test_plan_tag_2>: <tracked_test_plan_id_2 (example=ABC-321)>
     ...
     
 test_sets:
-  - <tracked_test_sets_tag_1>: <tracked_test_sets_id_1 (example=ABC-456)>
-  - <tracked_test_sets_tag_2>: <tracked_test_sets_id_2 (example=ABC-654)>
+  <tracked_test_sets_tag_1>: <tracked_test_sets_id_1 (example=ABC-456)>
+  <tracked_test_sets_tag_2>: <tracked_test_sets_id_2 (example=ABC-654)>
     ...
     
 test_environments:
-  - <test_environments_alias_1>: <test_environments_id_1 (example=INT)>
-  - <test_environments_alias_2>: <test_environments_id_2 (example=PRO)>
+  <test_environments_alias_1>: <test_environments_id_1 (example=INT)>
+  <test_environments_alias_2>: <test_environments_id_2 (example=PRO)>
     ...
     
 fields:
-  - test_repository_path: <test_repository_path_field (example=customfield_12)>
-  - test_plans: <test_plans_field (example=customfield_34)>
-  - execution_test_plans: <execution_test_plans_field (example=customfield_56)>
-  - execution_test_environments: <execution_test_environments_field (example=customfield_78)>
-  - execution_fix_versions: fixVersions
+  test_repository_path: <test_repository_path_field (example=customfield_12)>
+  test_plans: <test_plans_field (example=customfield_34)>
+  execution_test_plans: <execution_test_plans_field (example=customfield_56)>
+  execution_test_environments: <execution_test_environments_field (example=customfield_78)>
+  execution_fix_versions: fixVersions
   
 required:
   - <required_field_1 (example=execution_test_environments)>
@@ -45,11 +45,11 @@ required:
 ```
 
 In each use, bddsync ask for credentials. To avoid this behaviour, set the environment variables 
-`TEST_REPOSITORY_USER` y `TEST_REPOSITORY_PASS`
+`TEST_REPOSITORY_USER` and `TEST_REPOSITORY_PASS`
 
 ## Usage
 
-Start with `bddsync` (with optional arguments) followed by the command:
+Start with `bddsync` (with optional arguments) followed by the "command" from the list:
 
 ```
 $ bddsync [-h] [--config CONFIG] 
