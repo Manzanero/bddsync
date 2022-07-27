@@ -297,11 +297,11 @@ if __name__ == '__main__':
     # main(['-h', Commands.TEST_REPOSITORY_FOLDERS])
     # main(['-h', '--config', 'bddfile.yml', Commands.TEST_REPOSITORY_FOLDERS])
     # main(['-h', '--config', 'bddfile.yml', Commands.TEST_REPOSITORY_FOLDERS, '-h'])
-    # main(['-h', '--config', 'bddfile.yml', Commands.TEST_REPOSITORY_FOLDERS, '-h', '--folder', '/OWA'])
+    # main(['-h', '--config', 'bddfile.yml', Commands.TEST_REPOSITORY_FOLDERS, '-h', '--folder', '/FOLDER'])
     #
     # main([Commands.TEST_REPOSITORY_FOLDERS, '-h'])
     # main([Commands.TEST_REPOSITORY_FOLDERS])
-    # main([Commands.TEST_REPOSITORY_FOLDERS, '-h', '--folder', '/OWA'])
+    # main([Commands.TEST_REPOSITORY_FOLDERS, '-h', '--folder', '/FOLDER'])
     #
     # main([Commands.FEATURES, '-h'])
     # main([Commands.FEATURES])
@@ -310,9 +310,8 @@ if __name__ == '__main__':
     # main([Commands.SCENARIOS])
     #
     # main([Commands.UPLOAD_FEATURES, '-h'])
-    # main([Commands.UPLOAD_FEATURES, r'C:\workspaces\bddsync/features/Verisure OWA/Wrapper Android/actionplansWrapperAndroid.feature'])
     # main([Commands.UPLOAD_FEATURES, 'features/*Wrapper'])
     #
     # main([Commands.UPLOAD_RESULTS, '-h'])
-    # main([Commands.UPLOAD_RESULTS, '-e', 'STG', '-f', 'RW21_23', '-p', 'DCH-6689'])
+    # main([Commands.UPLOAD_RESULTS, '-e', 'ENV', '-f', 'RELEASE', '-p', 'ABC-1234'])
     # main([Commands.UPLOAD_RESULTS, 'output/result.json'])

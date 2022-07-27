@@ -186,6 +186,10 @@ class CucumberWrapper:
     def _is_line_of_tags(line):
         return line.strip().startswith('@')
 
+    @staticmethod
+    def _is_blank_line(line):
+        return not line.strip()
+
     def read_feature(self, path) -> Feature:
         with open(path, 'r', encoding='utf-8') as feature_file:
             lines = feature_file.readlines()
@@ -194,6 +198,8 @@ class CucumberWrapper:
         for i, line in enumerate(lines):
             if line.strip().startswith('Feature'):
                 feature_index = i
+                break
+
         scenario_indexes = []
         for i, line in enumerate(lines):
             if line.strip().startswith('Scenario'):
@@ -228,17 +234,17 @@ class CucumberWrapper:
             tags = []
             tag_row = 1
             tag_line = lines[index - tag_row]
-            while self._is_line_of_tags(tag_line):
+            while self._is_line_of_tags(tag_line) or self._is_blank_line(tag_line):
                 tags = [x.lstrip('@') for x in lines[index - tag_row].split()] + tags
                 tag_row += 1
                 tag_line = lines[index - tag_row]
 
             body = []
             next_index = len(lines) if index == scenario_indexes[-1] else scenario_indexes[i + 1]
-            for line in lines[index + 1:next_index]:
-                if self._is_line_of_tags(line):
+            for j in range(index + 1, next_index):
+                if self._is_line_of_tags(lines[j]) and 'Examples:' not in lines[j + 1]:
                     break
-                body.append(line.rstrip())
+                body.append(lines[j].rstrip())
 
             feature.add_scenario(Scenario(self, feature, index + 1, name, outline, tags, body))
 

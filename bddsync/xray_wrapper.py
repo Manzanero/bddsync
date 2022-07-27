@@ -213,21 +213,3 @@ class XrayWrapper:
             raise Exception(f'Not a test execution issue in response. Response:\n{response.text}')
         except json.decoder.JSONDecodeError:
             raise Exception(f'Not a JSON response. Response:\n{response.text}') from None
-
-
-# if __name__ == '__main__':
-#     import yaml
-#     import os
-#     with open('../bddfile.yml', 'r', encoding='utf-8') as kwarg_file:
-#         config = yaml.safe_load(kwarg_file)
-#         config['test_repository_user'] = os.environ['TEST_REPOSITORY_USER']
-#         config['test_repository_pass'] = os.environ['TEST_REPOSITORY_PASS']
-#         # XrayWrapper(config).make_dirs('/Test/A/B')
-#         # print(XrayWrapper(config).get_test_repository_folders())
-#         # XrayWrapper(config).import_result(
-#         #     '../output/result.json',
-#         #     test_environments=['INT'],
-#         #     fix_versions=['RW21_23'],
-#         #     test_plan_keys=['DCH-6689'],
-#         #     labels=['a']
-#         # )
