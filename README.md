@@ -67,6 +67,7 @@ commands available:
   scenarios
   upload-features
   upload-results
+  generate-docs
 ```
 
 ### test-repository-folders
@@ -149,3 +150,13 @@ optional arguments:
   -l LABELS,       --labels LABELS              comma separated labels
 ```
 
+### generate-docs
+
+It shows the description of features and scenarios:
+
+```
+$ bddsync [...] generate-docs [-h]
+
+optional arguments:
+  -h, --help       show this help message and exit
+```

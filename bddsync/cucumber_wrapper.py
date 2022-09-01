@@ -53,12 +53,18 @@ class Scenario:
                     return
 
     def _find_test_plans(self):
+        if not self.cucumber.config.get('test_plans'):
+            return
+
         if self.cucumber.config['test_repository'] == 'xray':
             for test_plan in self.cucumber.test_plans:
                 if test_plan.tag in self.effective_tags:
                     self.test_plans.append(test_plan)
 
     def _find_test_sets(self):
+        if not self.cucumber.config.get('test_sets'):
+            return
+
         if self.cucumber.config['test_repository'] == 'xray':
             for test_set in self.cucumber.test_sets:
                 if test_set.tag in self.effective_tags:

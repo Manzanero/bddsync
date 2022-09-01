@@ -19,6 +19,7 @@ class Commands:
     SCENARIOS = 'scenarios'
     UPLOAD_FEATURES = 'upload-features'
     UPLOAD_RESULTS = 'upload-results'
+    GENERATE_DOCS = 'generate-docs'
 
     @classmethod
     def all(cls):
@@ -85,6 +86,8 @@ def main(arg_vars: list = None):
         upload_features_command(command_args, config)
     elif command == Commands.UPLOAD_RESULTS:
         upload_results_command(command_args, config)
+    elif command == Commands.GENERATE_DOCS:
+        generate_docs_command(command_args, config)
     else:
         print(f'Error: command "{command}" not managed yet')
         exit(1)
@@ -291,6 +294,41 @@ def upload_results_command(command_args, config):
           f"(url={xray.base_url}/browse/{test_execution['key']})")
 
 
+def generate_docs_command(command_args, config):
+    parser = argparse.ArgumentParser(f"{NAME} [...] {Commands.GENERATE_DOCS}")
+    parser.parse_args(command_args)
+
+    cucumber = CucumberWrapper(config)
+
+    def get_desc(body):
+        desc_body = []
+        for line in body:
+            line = line.strip()
+            if line.startswith('Given'):
+                break
+            if line:
+                desc_body.append(line)
+        return ' '.join(desc_body)
+
+    for feature in cucumber.features:
+        feature_tags = ''.join([' @' + x for x in feature.tags])
+        feature_desc = get_desc(feature.body)
+        if feature_desc:
+            print(f'- {feature.name}: {feature_desc}{feature_tags} > {feature.path}')
+        else:
+            print(f'- {feature.name}{feature_tags} > {feature.path}')
+
+        for scenario in feature.scenarios:
+            scenario_tags = ''.join([' @' + x for x in scenario.tags])
+            scenario_desc = get_desc(scenario.body)
+            if scenario_desc:
+                print(f'  * {scenario.name}: {scenario_desc}{scenario_tags}')
+            else:
+                print(f'  * {scenario.name}{scenario_tags}')
+
+        print()
+
+
 if __name__ == '__main__':
     pass
     # main(['-h'])
@@ -315,3 +353,6 @@ if __name__ == '__main__':
     # main([Commands.UPLOAD_RESULTS, '-h'])
     # main([Commands.UPLOAD_RESULTS, '-e', 'ENV', '-f', 'RELEASE', '-p', 'ABC-1234'])
     # main([Commands.UPLOAD_RESULTS, 'output/result.json'])
+    #
+    # main([Commands.GENERATE_DOCS, '-h'])
+    # main([Commands.GENERATE_DOCS])
