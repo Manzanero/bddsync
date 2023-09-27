@@ -151,7 +151,7 @@ def upload_features_command(command_args, config):
     total_errors = []
     errors = []
     for feature in features:
-        issues = xray.get_issues_by_names([x.name for x in feature.scenarios])
+        issues = xray.get_issues_by_names([x.name.lower() for x in feature.scenarios])
         for scenario in feature.scenarios:
             occurrences = [issue['key'] for issue in issues if scenario.name == issue['fields']['summary']]
 
@@ -209,13 +209,13 @@ def upload_features_command(command_args, config):
                 xray.make_dirs(scenario.test_dir)
                 xray.move_test_dir(new_scenario_id, scenario.test_dir)
 
-            # manage plans
-            xray_test_plans = issues['fields'][xray.test_plans_field]
-            code_test_plans = [plan.id for plan in scenario.test_plans]
-            code_test_plans_to_add = [plan for plan in code_test_plans if plan not in xray_test_plans]
-            xray_test_plans_to_remove = [plan for plan in xray_test_plans if plan not in code_test_plans]
-            xray.add_tests_to_test_plans([new_scenario_id], code_test_plans_to_add)
-            xray.remove_tests_from_test_plans([new_scenario_id], xray_test_plans_to_remove)
+            # manage plans - TODO: switch this functionality
+            # xray_test_plans = issues['fields'][xray.test_plans_field]
+            # code_test_plans = [plan.id for plan in scenario.test_plans]
+            # code_test_plans_to_add = [plan for plan in code_test_plans if plan not in xray_test_plans]
+            # xray_test_plans_to_remove = [plan for plan in xray_test_plans if plan not in code_test_plans]
+            # xray.add_tests_to_test_plans([new_scenario_id], code_test_plans_to_add)
+            # xray.remove_tests_from_test_plans([new_scenario_id], xray_test_plans_to_remove)
 
         print('Repairing feature tags')
         feature.repair_tags()
