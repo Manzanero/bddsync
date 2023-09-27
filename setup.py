@@ -12,7 +12,7 @@ setup(
             "bddsync = bddsync.__init__:main"
         ],
     },
-    version='1.1.0',
+    version='1.1.1',
     license='MIT',
     description='Tools to synchronize BDD files with test management tools like Jira-Xray',
     long_description=long_description,
@@ -20,7 +20,7 @@ setup(
     author='Alejandro Manzanero',
     author_email='alejmans@gmail.com',
     url='https://github.com/Manzanero/bddsync',
-    download_url='https://github.com/Manzanero/bddsync/archive/refs/tags/v1.1.0.tar.gz',
+    download_url='https://github.com/Manzanero/bddsync/archive/refs/tags/v1.1.1.tar.gz',
     keywords=['bdd', 'cucumber', 'behave', 'jira', 'xray', 'testing'],
     install_requires=[
         'requests',
@@ -31,6 +31,6 @@ setup(
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Build Tools',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
     ],
 )
