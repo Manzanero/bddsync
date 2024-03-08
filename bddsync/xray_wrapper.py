@@ -127,6 +127,16 @@ class XrayWrapper:
             raise Exception(f'ERROR: Cannot remove labels {labels} from [{issue_key}] due to error: '
                             f'(status code: {response.status_code}) {response.text}')
 
+    def add_labels(self, issue_key: str, labels: list):
+        response = requests.put(
+            f'{self.base_url}/rest/api/2/issue/{issue_key}',
+            json={"update": {"labels": [{"add": label} for label in labels]}},
+            auth=self.auth
+        )
+        if response.status_code != 204:
+            raise Exception(f'ERROR: Cannot add labels {labels} from [{issue_key}] due to error: '
+                            f'(status code: {response.status_code}) {response.text}')
+
     def add_tests_to_test_plans(self, issue_keys: list[str], test_plan_keys: list[str]):
         for test_plan_key in test_plan_keys:
             print(f'Add {issue_keys} to test plan: [{test_plan_key}]')
