@@ -200,8 +200,8 @@ def upload_features_command(command_args, config):
 
             # manage labels
             labels = issues['fields']['labels']
-            if labels_to_remove := [label for label in labels if label not in scenario.effective_tags]:
-                xray.remove_labels(new_scenario_id, labels_to_remove)
+            labels_to_remove = [scenario.id] + [label for label in labels if label not in scenario.effective_tags]
+            xray.remove_labels(new_scenario_id, labels_to_remove)
             if labels_to_add := [tag for tag in feature.tags if tag not in scenario.effective_tags]:
                 xray.add_labels(new_scenario_id, labels_to_add)
 
