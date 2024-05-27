@@ -9,7 +9,7 @@ from bddsync.cucumber_wrapper import CucumberWrapper
 from bddsync.xray_wrapper import XrayWrapper
 
 NAME = 'bddsync'
-VERSION = 'v1.2.0'
+VERSION = 'v1.2.1'
 
 
 class Commands:
