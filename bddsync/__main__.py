@@ -212,7 +212,7 @@ def upload_features_command(command_args, config):
                 xray.move_test_dir(new_scenario_id, scenario.test_dir)
 
             # manage plans
-            tracked_test_plans = list(config.get('test_plans', {}).keys())
+            tracked_test_plans = list(config.get('test_plans', {}).values())
             in_xray_test_plans = issues['fields'][xray.test_plans_field]
             in_code_test_plans = [plan.id for plan in scenario.test_plans]
             in_code_test_plans_to_add = [plan for plan in in_code_test_plans if plan not in in_xray_test_plans]
