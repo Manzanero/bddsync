@@ -9,7 +9,7 @@ from bddsync.cucumber_wrapper import CucumberWrapper
 from bddsync.xray_wrapper import XrayWrapper
 
 NAME = 'bddsync'
-VERSION = 'v1.2.1'
+VERSION = 'v1.2.2'
 
 
 class Commands:
@@ -200,7 +200,7 @@ def upload_features_command(command_args, config):
 
             # manage labels
             labels = issues['fields']['labels']
-            labels_to_remove = [scenario.id] + [label for label in labels if label not in scenario.effective_tags]
+            labels_to_remove = [scenario.test_id] + [label for label in labels if label not in scenario.effective_tags]
             xray.remove_labels(new_scenario_id, labels_to_remove)
             if labels_to_add := [tag for tag in feature.tags if tag not in scenario.effective_tags]:
                 xray.add_labels(new_scenario_id, labels_to_add)
